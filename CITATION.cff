@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite the associated article."
+title: "MEDDC-DTI: multi-route evidence decomposition and disagreement-aware calibration for drug-target interaction prediction"
+type: software
+version: 1.0.0
+date-released: 2026-08-22
+license: MIT
+authors:
+  - family-names: "Ou"
+    given-names: "Jiawei"
+  - family-names: "Huang"
+    given-names: "Zhanpeng"
+    email: "gdpuhzp@126.com"
+repository-code: "https://github.com/jiawei0035/MEDDC-DTI"
+abstract: "Evidence-aware multimodal learning for drug-target interaction prediction."
