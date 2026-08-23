@@ -942,6 +942,3 @@ class MEDDCDTI(nn.Module):
         return x_hat, z_hat, None, h_biochem, h_topo, h_refined, h_drug, h_prot
 
 
-# Backward-compatible aliases for older research scripts.
-MEDAFDTI = MEDDCDTI
-EAGLEDTI = MEDDCDTI
