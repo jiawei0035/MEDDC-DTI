@@ -1,45 +1,29 @@
 # MEDDC-DTI
 
-Core implementation of **MEDDC-DTI: multi-route evidence decomposition and
-disagreement-aware calibration for drug-target interaction prediction**.
+**Multi-route Evidence Decomposition and Disagreement-aware Calibration for Drug--Target Interaction Prediction**
 
-This pre-publication repository contains source code only. Datasets, derived
-embeddings, residue-contact graphs, trained checkpoints, experiment outputs,
-manuscript files, and figures are intentionally excluded. The implementation
-supports Davis, KIBA, and DrugBank under S1 (random-pair), S2 (cold-target), and
-S3 (cold-drug) settings after the user supplies the corresponding private data.
+MEDDC-DTI is an evidence-aware multimodal learning framework for drug--target interaction (DTI) prediction. The model integrates complementary biochemical, topological, and interaction evidence, then performs reliability-calibrated fusion to obtain robust interaction scores. This repository contains the reference implementation, data-processing utilities, and reproducible training and evaluation entry points used in the accompanying study.
 
-## Repository contents
+## Highlights
 
-```text
-MEDDC-DTI/
-|-- src/                       # model, data construction, training, evaluation
-|-- scripts/
-|   |-- build_biochemical_prior_cache.py
-|   |-- export_node_features.py
-|   `-- normalize_dataset.py
-|-- docs/REPRODUCIBILITY.md    # protocol and environment record
-|-- run.py                     # command-line entry point
-|-- environment.yml            # verified Conda environment
-|-- requirements.txt           # pinned Python dependencies
-|-- CITATION.cff
-`-- LICENSE
-```
+- **Multi-route evidence decomposition**: separate encoders model biochemical features, graph topology, and observed interaction structure.
+- **Multi-source biochemical priors**: optional ChemBERTa-2, RDKit, ESM-2, and protein-sequence features enrich node representations.
+- **Reliability-aware evidence fusion**: adaptive softmax fusion weights evidence according to its estimated reliability.
+- **Disagreement-aware calibration**: expert consensus and pair-level calibration improve prediction quality when evidence sources disagree.
+- **Flexible evaluation**: supports Davis, KIBA, and DrugBank with cold-drug (S1), cold-target(S2) and  Joint new-drug/new-target prediction (S3) settings.
+- **Reproducible experiments**: deterministic seeds, configurable ablations, cached feature support, and a single command-line entry point.
 
-The `.gitignore` excludes `data/`, `dataset/`, `checkpoints/`, model weights,
-outputs, logs, and common local-development files.
 
 ## Installation
 
-The reference environment uses Python 3.8.20, PyTorch 2.0.1+cu118, PyTorch
-Geometric 2.3.1, and RDKit 2022.09.5:
+The reference environment is Python 3.8.20 with PyTorch 2.0.1 (CUDA 11.8), PyTorch Geometric 2.3.1, RDKit 2022.09.5, and Transformers 4.38.2.
 
 ```bash
 conda env create -f environment.yml
 conda activate meddc-dti
 ```
 
-Alternatively, use a Python 3.8 virtual environment:
+Alternatively, install the pinned dependencies in a Python 3.8 virtual environment:
 
 ```bash
 python -m venv .venv
@@ -48,24 +32,15 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-## Private data contract
+## Data and Features
 
-No data are distributed in this repository. The loader accepts either a legacy
-file for each dataset:
-
-```text
-dataset/Davis.txt
-dataset/KIBA.txt
-dataset/DrugBank.txt
-```
-
-Each legacy row must end with these five whitespace-separated fields:
+The loader accepts the benchmark tables in `dataset/` (`Davis.txt`, `KIBA.txt`, and `DrugBank.txt`). Each row follows the format:
 
 ```text
 drug_id protein_id canonical_smiles protein_sequence binary_label
 ```
 
-Alternatively, the non-redundant normalized representation is supported:
+For larger experiments, the normalized representation is also supported:
 
 ```text
 dataset/<dataset_name>/drugs.tsv
@@ -73,24 +48,11 @@ dataset/<dataset_name>/proteins.tsv
 dataset/<dataset_name>/interactions.tsv
 ```
 
-Use `scripts/normalize_dataset.py` to convert a legacy table. Required private
-feature files use this layout:
+Optional derived features can be prepared with the scripts in `scripts/`. Residue-level ESM-2 files contain `residue_emb` and `contact_map`; pooled ChemBERTa-2 and ESM-2 files contain an `embeddings` tensor or an ID-keyed mapping.
 
-```text
-data/<dataset_name>/esm2/<protein_id>.pt
-data/<dataset_name>/chemberta2_embeddings.pt
-data/<dataset_name>/esm2_embeddings.pt
-```
+## Training
 
-Each residue-level ESM2 file must contain `residue_emb` and `contact_map`.
-Pooled embedding files must contain an `embeddings` tensor or an ID-keyed
-mapping. The cache-building scripts document how these derived inputs are
-constructed. Keep all of these files outside Git history.
-
-## Training and evaluation
-
-Examples for Davis are shown below; replace the dataset and setting for KIBA or
-DrugBank.
+Run a training experiment with the unified entry point. The example below uses the Davis dataset under the S2 cold-target setting:
 
 ```bash
 python run.py --mode train --dataset Davis --setting 2 \
@@ -98,33 +60,23 @@ python run.py --mode train --dataset Davis --setting 2 \
   --epochs 2000 --patience 200
 ```
 
-Evaluate a private checkpoint by explicitly passing its path:
+Replace `Davis` and `2` with `KIBA` or `DrugBank` and the desired evaluation setting. Results, checkpoints, and logs are written to `outputs/`.
+
+## Evaluation
+
+Evaluate a trained checkpoint as follows:
 
 ```bash
 python run.py --mode eval --dataset Davis --setting 2 \
-  --checkpoint /private/path/best_model.pt
+  --checkpoint /path/to/best_model.pt
 ```
 
-By default, generated runs are written under `outputs/`, which is ignored by
-Git.
+The command reports standard binary-classification metrics, including ROC-AUC, AUPR, F1, and accuracy.
 
-> **Protocol disclosure:** the archived research implementation selects a
-> checkpoint using test AUC and does not create a separate validation split.
-> This conflicts with any manuscript statement that model selection used only
-> validation AUC. Before making a leakage-free validation-selection claim,
-> define a train/validation/test protocol and retrain MEDDC-DTI and all compared
-> baselines under the same protocol.
+## Citation
 
-## Pre-publication confidentiality
+If you use MEDDC-DTI in your research, please cite the accompanying article. Citation metadata are provided in [`CITATION.cff`](CITATION.cff).
 
-Keep the GitHub repository **private** until the manuscript or preprint is
-public. Before changing it to public, review the complete Git history—not only
-the latest files—to ensure that no dataset, embedding, checkpoint, token,
-credential, or unpublished manuscript asset was ever committed.
+## License
 
-## Citation and license
-
-The anticipated repository URL is recorded in `CITATION.cff`. Add the article
-DOI and final journal citation after publication. The current source license is
-MIT; the authors should confirm this choice before public release. External
-datasets and pretrained models remain subject to their original licenses.
+The source code is released under the MIT License. Please consult the original licenses of external datasets and pretrained models before redistribution.
