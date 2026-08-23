@@ -16,9 +16,8 @@ outputs/
 logs/
 *.log
 
-# Private datasets, derived features, and trained weights must never be committed.
+# Derived features and trained weights are generated locally.
 data/
-dataset/
 checkpoints/
 *.pt
 *.pth
